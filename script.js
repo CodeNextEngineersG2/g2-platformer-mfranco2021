@@ -85,6 +85,7 @@ function draw() {
   updatePlayer();
   updateDisplay();
   drawSprites();
+
 }
 
 // Called when player wins or loses
@@ -111,7 +112,7 @@ function buildLevel() {
   // best method is to draw sprites from left to right on the screen
   createPlatform(50, 690, 5);
   createCollectable(300, 340);
-  createMonster(500, 600, 0);
+  createMonster(500, 600, -1);
 }
 
 // Creates a player sprite and adds animations and a collider to it
@@ -198,6 +199,9 @@ function applyGravity() {
 function checkCollisions() {
     player.collide(platforms, platformCollision);
     monsters.collide(platforms, platformCollision);
+    player.collide(monsters, playerMonsterCollision);
+    player.overlap(collectables, getCollectable);
+
 }
 
 // Callback function that runs when the player or a monster collides with a
@@ -219,6 +223,22 @@ function platformCollision(sprite, platform) {
 // Callback function that runs when the player collides with a monster.
 function playerMonsterCollision(player, monster) {
 
+    if(player.touching.bottom) {
+      monster.remove();
+        var defeatedMonster = createSprite(monster.position.x, monster.position.y, 0, 0);
+      defeatedMonster.addImage(monsterDefeatImage);
+      defeatedMonster.mirrorX(monster.mirrorX());
+      defeatedMonster.scale = 0.25;
+      defeatedMonster.life = 40;
+      currentJumpTime = MAX_JUMP_TIME;
+      currentJumpForce = DEFAULT_JUMP_FORCE;
+      player.velocity.y = currentJumpForce;
+      millis = new Date();
+      score++;
+}
+    else {
+      executeLoss();
+    }
 }
 
 // Callback function that runs when the player overlaps with a collectable.
@@ -229,7 +249,7 @@ function getCollectable(player, collectable) {
 // Updates the player's position and current animation by calling
 // all of the relevant "check" functions below.
 function updatePlayer() {
-  //console.log("Player x: " + player.position.x + " Player y: " + player.position.y);
+  console.log("Player x: " + player.position.x + " Player y: " + player.position.y);
   checkIdle();
   checkFalling();
   checkJumping();
@@ -339,7 +359,10 @@ function updateDisplay() {
 
   // turn camera back on
   camera.on();
-
+  camera.position.x = player.position.x;
+  for(var i = 0; i< collectables.length; i++) {
+    collectables[i].rotation += 5;
+}
 }
 
 // Called when the player has won the game (e.g., reached the goal at the end).
@@ -353,5 +376,6 @@ function executeWin() {
 // a monster). Anything can happen here, but the most important thing is that we
 // call resetGame() after a short delay.
 function executeLoss() {
-
+noLoop();
+setTimeout(resetGame, 1000);
 }
